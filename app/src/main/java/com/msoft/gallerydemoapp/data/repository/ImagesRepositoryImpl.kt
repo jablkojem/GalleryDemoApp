@@ -8,6 +8,7 @@ import android.text.format.Formatter.formatShortFileSize
 import androidx.annotation.RequiresApi
 import com.msoft.gallerydemoapp.data.datasource.LocalImagesDataSource
 import com.msoft.gallerydemoapp.data.models.ImageInfo
+import com.msoft.gallerydemoapp.data.resource.Resource
 import com.msoft.gallerydemoapp.domain.use_case.FormatDateUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +26,7 @@ class ImagesRepositoryImpl(
 
     private val refreshImagesScope = CoroutineScope(Dispatchers.IO)
 
-    override val allImages: StateFlow<List<Uri>> = MutableStateFlow(emptyList())
+    override val allImages: StateFlow<Resource<List<Uri>>> = MutableStateFlow(Resource.Data(emptyList()))
 
     override fun getImageInfo(uri: String): ImageInfo {
         with(localImagesDataSource.getImageMetadata(Uri.parse(uri))) {
@@ -35,7 +36,9 @@ class ImagesRepositoryImpl(
 
     override fun refreshImages() {
         refreshImagesScope.launch {
-            (allImages as MutableStateFlow).update { localImagesDataSource.getAllImages() }
+            (allImages as MutableStateFlow).update { Resource.Loading() }
+            val images = localImagesDataSource.getAllImages()
+            allImages.update { Resource.Data(images) }
         }
     }
 

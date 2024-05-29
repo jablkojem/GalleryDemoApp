@@ -5,10 +5,11 @@ import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.msoft.gallerydemoapp.data.models.ImageInfo
+import com.msoft.gallerydemoapp.data.resource.Resource
 import kotlinx.coroutines.flow.StateFlow
 
 interface ImagesRepository {
-    val allImages: StateFlow<List<Uri>>
+    val allImages: StateFlow<Resource<List<Uri>>>
     fun getImageInfo(uri: String): ImageInfo
     fun refreshImages()
 

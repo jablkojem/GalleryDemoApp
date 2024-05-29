@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
             GalleryDemoAppTheme {
                 val navController = rememberNavController()
                 val uiState = imagesListViewModel.uiState.collectAsState()
-                val imagesData = imagesListViewModel.imagesData.collectAsState()
+                val imagesData = imagesListViewModel.displayedImages.collectAsState()
                 val deleteImagesPermissionGranted = imagesListViewModel.deleteImagesPermissionGranted.collectAsState()
 
                 NavHost(navController = navController, startDestination = "images") {
