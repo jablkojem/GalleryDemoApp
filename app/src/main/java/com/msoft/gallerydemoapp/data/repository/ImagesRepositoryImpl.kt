@@ -12,9 +12,9 @@ import com.msoft.gallerydemoapp.data.resource.Resource
 import com.msoft.gallerydemoapp.domain.use_case.FormatDateUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -24,9 +24,17 @@ class ImagesRepositoryImpl(
     private val formatDateUseCase: FormatDateUseCase
 ) : ImagesRepository {
 
-    private val refreshImagesScope = CoroutineScope(Dispatchers.IO)
+    private val refreshImagesTrigger = MutableSharedFlow<Unit>(1)
 
-    override val allImages: StateFlow<Resource<List<Uri>>> = MutableStateFlow(Resource.Data(emptyList()))
+    override val allImages: Flow<Resource<List<Uri>>> = MutableStateFlow<Resource<List<Uri>>>(Resource.Data(emptyList())).apply {
+        CoroutineScope(Dispatchers.IO).launch {
+            refreshImagesTrigger.collect {
+                value = Resource.Loading()
+                val images = localImagesDataSource.getAllImages()
+                value = Resource.Data(images)
+            }
+        }
+    }
 
     override fun getImageInfo(uri: String): ImageInfo {
         with(localImagesDataSource.getImageMetadata(Uri.parse(uri))) {
@@ -35,11 +43,7 @@ class ImagesRepositoryImpl(
     }
 
     override fun refreshImages() {
-        refreshImagesScope.launch {
-            (allImages as MutableStateFlow).update { Resource.Loading() }
-            val images = localImagesDataSource.getAllImages()
-            allImages.update { Resource.Data(images) }
-        }
+        refreshImagesTrigger.tryEmit(Unit)
     }
 
     override fun deleteImage(uri: String) = localImagesDataSource.deleteImage(Uri.parse(uri))
